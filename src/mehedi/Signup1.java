@@ -3,7 +3,10 @@ package mehedi;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -11,7 +14,7 @@ import com.toedter.calendar.JDateChooser;
 
 public class Signup1 extends JFrame implements ActionListener {
     private int random;
-    private JTextField nameTextField, fatherNameTextField, emailTextField, addressTextField, cityTextField, stateTextField, postalTextField;
+    private JTextField nameTextField, fatherNameTextField, emailTextField, addressTextField, cityTextField, divisionTextField, postalTextField;
     private JButton next;
     private JRadioButton male, female, other, married, unmarried, other2;
     private ButtonGroup genderGroup, maritalGroup;
@@ -70,7 +73,7 @@ public class Signup1 extends JFrame implements ActionListener {
         cityTextField = addTextField(300, 455);
 
         addLabel("Division:", 20, 100, 500, 200, 30);
-        stateTextField = addTextField(300, 500);
+        divisionTextField = addTextField(300, 500);
 
         addLabel("ZIP (Postal Code):", 20, 100, 545, 200, 30);
         postalTextField = addTextField(300, 545);
@@ -130,8 +133,8 @@ public class Signup1 extends JFrame implements ActionListener {
             missing.add("Address");
         if (cityTextField.getText().trim().isEmpty())
             missing.add("City");
-        if (stateTextField.getText().trim().isEmpty())
-            missing.add("State");
+        if (divisionTextField.getText().trim().isEmpty())
+            missing.add("Division");
         if (postalTextField.getText().trim().isEmpty())
             missing.add("ZIP (Postal Code)");
         // ... populate missing ...
@@ -144,36 +147,57 @@ public class Signup1 extends JFrame implements ActionListener {
 
         // --- Phase 2: Gather Values ---
         String formNo = String.valueOf(random);     // = "" + random   -   wil also work
-        String name = nameTextField.getText();
-        String fatherName = fatherNameTextField.getText();
-        String dob = ((JTextField) dateChooser.getDateEditor().getUiComponent()).getText();
+        String name = nameTextField.getText().trim();
+        String fatherName = fatherNameTextField.getText().trim();
+
+        Date dobDate = dateChooser.getDate();
+        // String dob = ((JTextField) dateChooser.getDateEditor().getUiComponent()).getText();
+        String dob = new SimpleDateFormat("dd-MM-yyyy").format(dobDate);
+
         String gender;
-        if (male.isSelected()) {
+        if (male.isSelected())
             gender = "Male";
-        } else if (female.isSelected()) {
+        else if (female.isSelected())
             gender = "Female";
-        } else {
+        else
             gender = "Other";
-        }
+
         String maritalStatus;
-        if (married.isSelected()) {
+        if (married.isSelected())
             maritalStatus = "Married";
-        } else if (unmarried.isSelected()) {
+        else if (unmarried.isSelected())
             maritalStatus = "Unmarried";
-        } else {
+        else
             maritalStatus = "Other";
-        }
-        String email = emailTextField.getText();
-        String address = addressTextField.getText();
-        String city = cityTextField.getText();
-        String state = stateTextField.getText();
-        String postal = postalTextField.getText();
+
+        String email = emailTextField.getText().trim();
+        String address = addressTextField.getText().trim();
+        String city = cityTextField.getText().trim();
+        String division = divisionTextField.getText().trim();
+        String postal = postalTextField.getText().trim();
 
         // --- Phase 3: Persist to DB ---
+        DatabaseConnection db = null;
         try {
-            DatabaseConnection databaseConnection = new DatabaseConnection();
-            String query = "insert into signup values('" + formNo + "', '" + name + "', '" + fatherName + "', '" + dob + "', '" + gender + "', '" + maritalStatus + "', '" + email + "', '" + address + "', '" + city + "', '" + state + "', '" + postal + "')";
-            databaseConnection.statement.executeUpdate(query);    // 4️⃣ Execute the SQL Query
+            db = new DatabaseConnection();
+            if (db.connection == null) throw  new SQLException("No DB connection");
+
+            String query = "INSERT INTO signup(formNo, name, fatherName, dob, gender, maritalStatus, email, address, city, division, postal) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+            // 4️⃣ Execute the SQL Query
+            try (PreparedStatement ps = db.connection.prepareStatement(query)) {
+                ps.setString(1, formNo);
+                ps.setString(2, name);
+                ps.setString(3, fatherName);
+                ps.setString(4, dob);
+                ps.setString(5, gender);
+                ps.setString(6, maritalStatus);
+                ps.setString(7, email);
+                ps.setString(8, address);
+                ps.setString(9, city);
+                ps.setString(10, division);
+                ps.setString(11, postal);
+                ps.executeUpdate();
+            }
 
             this.dispose();                          // Close the Signup1 frame
             new Signup2(formNo).setVisible(true);    // Open Signup2 frame and make it visible to the user
@@ -181,6 +205,10 @@ public class Signup1 extends JFrame implements ActionListener {
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "DB Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            if (db != null) {
+                try { db.close(); } catch (Exception ignore) {}
+            }
         }
     }
 
@@ -194,19 +222,6 @@ public class Signup1 extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        // SwingUtilities.invokeLater(SignUp1::new);    // Thread safe
-        new Signup1();
+        SwingUtilities.invokeLater(Signup1::new);    // Thread safe
     }
 }
-
-// 4️⃣ Execute the SQL Query
-// ResultSet rs = stmt.executeQuery("SELECT * FROM your_table");  // use executeUpdate() for INSERT/UPDATE/DELETE
-
-
-// String query = String.join(
-//                 " ",
-//                 "INSERT INTO signup(form_no,name,father_name,dob,gender,marital_status,email,address,city,state,postal)",
-//                 String.format("VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-//                     formNo, name, fatherName, dob, gender, maritalStatus, email, address, city, state, postal
-//                 )
-//             );

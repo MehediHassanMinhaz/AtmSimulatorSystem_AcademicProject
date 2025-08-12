@@ -4,13 +4,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.ArrayList;
 
 public class Signup2 extends JFrame implements ActionListener {
     private String formNo;
-    private JComboBox religionComboBox, incomeComboBox, educationComboBox, occupationComboBox;
+    private JComboBox<String> religionComboBox, incomeComboBox, educationComboBox, occupationComboBox;
     private JTextField tinTextField, nidTextField;
     private ButtonGroup seniorGroup, existingAcntGrp;
     private JRadioButton yes, no, yes2, no2;
@@ -140,16 +141,31 @@ public class Signup2 extends JFrame implements ActionListener {
         String income = (String) incomeComboBox.getSelectedItem();
         String education = (String) educationComboBox.getSelectedItem();
         String occupation = (String) occupationComboBox.getSelectedItem();
-        String tin = tinTextField.getText();
-        String nid = nidTextField.getText();
+        String nid = nidTextField.getText().trim();
+        String tin = tinTextField.getText().trim();
         String seniorCitizen = yes.isSelected() ? "Yes" : "No";
         String existingAcnt = yes2.isSelected() ? "Yes" : "No";
 
         // --- Phase 3: Persist to DB ---
+        DatabaseConnection db = null;
         try {
-            DatabaseConnection databaseConnection = new DatabaseConnection();
-            String query = "insert into signup2 values('" + formNo + "', '" + religion + "', '" + income + "', '" + education + "', '" + occupation + "', '" + tin + "', '" + nid + "', '" + seniorCitizen + "', '" + existingAcnt + "')";
-            databaseConnection.statement.executeUpdate(query);    // 4️⃣ Execute the SQL Query
+            db = new DatabaseConnection();
+            if (db.connection == null) throw new SQLException("No DB connection");
+
+            String query = "INSERT INTO signup2(formNo, religion, income, education, occupation, tin, nid, seniorCitizen, existingAcnt) VALUES(?,?,?,?,?,?,?,?,?)";
+            // 4️⃣ Execute the SQL Query
+            try (PreparedStatement ps = db.connection.prepareStatement(query)) {
+                ps.setString(1, formNo);
+                ps.setString(2, religion);
+                ps.setString(3, income);
+                ps.setString(4, education);
+                ps.setString(5, occupation);
+                ps.setString(6, tin);
+                ps.setString(7, nid);
+                ps.setString(8, seniorCitizen);
+                ps.setString(9, existingAcnt);
+                ps.executeUpdate();
+            }
 
             // after successful insert...
             this.dispose();                          // destroy this frame
@@ -158,6 +174,8 @@ public class Signup2 extends JFrame implements ActionListener {
             e.printStackTrace(); // so you see the real error in your IDE/console
             JOptionPane.showMessageDialog(this, "DB error: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            if (db != null) { try {db.close(); } catch (Exception ignore) {}}
         }
     }
 
@@ -171,15 +189,6 @@ public class Signup2 extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        // SwingUtilities.invokeLater(SignUp1::new);    // Thread safe
-        new Signup2("");
+        SwingUtilities.invokeLater(() -> new Signup2(""));
     }
 }
-
-// 4️⃣ Execute the SQL Query
-// ResultSet rs = stmt.executeQuery("SELECT * FROM your_table");  // use executeUpdate() for INSERT/UPDATE/DELETE
-
-// String query = String.format(
-//         "INSERT INTO signup2 VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-//         formNo, religion, income, education, occupation, tin, nid, seniorCitizen, existingAcnt
-// );

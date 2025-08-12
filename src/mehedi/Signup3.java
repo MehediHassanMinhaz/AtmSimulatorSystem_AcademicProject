@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.security.SecureRandom;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Random;
 
@@ -131,9 +133,12 @@ public class Signup3 extends JFrame implements ActionListener {
             else if (recurringAcnt.isSelected())
                 accountType = "Recurring Deposit Account";
 
-            // generate card and PIN
-            String cardNumber = String.format("%016d", Math.abs(new Random().nextLong()) % 1_0000_0000_0000_0000L);
-            String pinCode = String.format("%04d", Math.abs(new Random().nextInt(10000)));
+            // Generate card and PIN using SecureRandom (stable, no negative issues)
+            SecureRandom sr = new SecureRandom();
+            StringBuilder cardSb = new StringBuilder(16);
+            for (int i = 0; i < 16; i++) cardSb.append(sr.nextInt(10));
+            String cardNumber = cardSb.toString();
+            String pinCode = String.format("%04d", sr.nextInt(10000));
 
             StringBuilder services = new StringBuilder();
             if (atmCard.isSelected())
@@ -148,31 +153,56 @@ public class Signup3 extends JFrame implements ActionListener {
                 services.append("Check Book, ");
             if (eStatement.isSelected())
                 services.append("E-Statement, ");
-
             // Truncating last ", "
             String serviceStr = !services.isEmpty() ? services.substring(0, services.length() - 2) : "None";
 
             // --- Phase 3: Persist to DB ---
+            DatabaseConnection db = null;
             try {
-                DatabaseConnection databaseConnection = new DatabaseConnection();
-                String query1 = "insert into signup3 values('" + formNo + "' , '" + accountType + "', '" + cardNumber + "', '" + pinCode + "', '" + serviceStr + "')";
-                String query2 = "insert into login values('" + formNo + "' , '" + cardNumber + "', '" + pinCode + "')";
-                databaseConnection.statement.executeUpdate(query1);    // 4️⃣ Execute the SQL Query
-                databaseConnection.statement.executeUpdate(query2);    // 4️⃣ Execute the SQL Query
+                db = new DatabaseConnection();
+                if (db.connection == null) throw new SQLException("No DB connection");
+
+                // Use a transaction to ensure both inserts happen atomically
+                db.connection.setAutoCommit(false);
+                String q1 = "INSERT INTO signup3(formNo, accountType, cardNumber, pinCode, services) VALUES(?,?,?,?,?)";
+                String q2 = "INSERT INTO login(formNo, cardNo, pinNo) VALUES(?,?,?)";
+
+                try (PreparedStatement p1 = db.connection.prepareStatement(q1);
+                     PreparedStatement p2 = db.connection.prepareStatement(q2)) {
+
+                    p1.setString(1, formNo);
+                    p1.setString(2, accountType);
+                    p1.setString(3, cardNumber);
+                    p1.setString(4, pinCode);
+                    p1.setString(5, serviceStr);
+                    p1.executeUpdate();
+
+                    p2.setString(1, formNo);
+                    p2.setString(2, cardNumber);
+                    p2.setString(3, pinCode);
+                    p2.executeUpdate();
+
+                    db.connection.commit();
+                } catch (SQLException e) {
+                    try { db.connection.rollback(); } catch (Exception ignore) {}
+                    throw e;
+                } finally {
+                    try { db.connection.setAutoCommit(true); } catch (Exception ignore) {}
+                }
 
                 JOptionPane.showMessageDialog(this, "Card No: " + cardNumber + "\nPIN: " + pinCode, "Account Created", JOptionPane.INFORMATION_MESSAGE);
 
-                // Prompt to deposit for the first time to activate account
                 this.dispose();
                 new Deposit(pinCode).setVisible(true);
                 JOptionPane.showMessageDialog(this, "To activate your new account, please make an initial deposit.", "Account Activation", JOptionPane.INFORMATION_MESSAGE);
-            }
-            catch (SQLException e) {
+
+            } catch (SQLException e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "DB error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } finally {
+                if (db != null) { try { db.close(); } catch (Exception ignore) {} }
             }
         }
-
         else if (ae.getSource() == cancelButton) {
             this.dispose();
             new Login().setVisible(true);
@@ -190,15 +220,6 @@ public class Signup3 extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        new Signup3("");
+        SwingUtilities.invokeLater(() -> new Signup3(""));
     }
 }
-
-// String q1 = String.format(
-//         "INSERT INTO signup3 VALUES('%s','%s','%s','%s','%s')",
-//         formNo, accountType, cardNumber, pinCode, serviceStr
-// );
-// String q2 = String.format(
-//         "INSERT INTO login(form_no,card_number,pin) VALUES('%s','%s','%s')",
-//         formNo, cardNumber, pinCode
-// );
