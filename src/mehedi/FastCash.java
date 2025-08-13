@@ -87,7 +87,7 @@ public class FastCash extends JFrame implements ActionListener {
             }
 
             if (balance < amount) {
-                JOptionPane.showMessageDialog(this, "Insufficient Balance!", "Withdrawal Failed", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Insufficient balance! Your current balance is Tk " + balance + ".", "Withdrawal Failed", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 

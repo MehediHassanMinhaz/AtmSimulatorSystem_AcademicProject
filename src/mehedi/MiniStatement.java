@@ -113,6 +113,7 @@ public class MiniStatement extends JFrame implements ActionListener {
 
     private void loadTransactions(String PIN) {
         int currentBalance = 0;
+        boolean hasTransactions = false; // flag to track if there are any transactions
         DatabaseConnection db = null;
         try {
             db = new DatabaseConnection();
@@ -123,6 +124,7 @@ public class MiniStatement extends JFrame implements ActionListener {
                 try (ResultSet rs = pst.executeQuery()) {
                     NumberFormat nf = NumberFormat.getNumberInstance();
                     while (rs.next()) {
+                        hasTransactions = true; // found at least one transaction
                         String dateStr = resolveDateString(rs, "date");
                         String type = rs.getString("type");
                         String amountRaw = rs.getString("amount");
@@ -142,6 +144,11 @@ public class MiniStatement extends JFrame implements ActionListener {
                 }
             }
 
+            // If no transactions, show "No Transactions"
+            if (!hasTransactions) {
+                miniArea.setText("No Transaction History!");
+            }
+
             balanceLabel.setText("Your Current Account Balance is Tk " + currentBalance);
 
             // Auto-scroll to bottom
@@ -155,10 +162,6 @@ public class MiniStatement extends JFrame implements ActionListener {
         }
     }
 
-    /**
-     * Produce a user-friendly date string. If the column is a Timestamp/Date, return java.util.Date.toString()
-     * (the old-style string you used earlier). Otherwise try parsing common timestamp string formats.
-     */
     private String resolveDateString(ResultSet rs, String column) {
         try {
             // Try Timestamp

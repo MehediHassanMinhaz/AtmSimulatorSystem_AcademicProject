@@ -83,6 +83,14 @@ public class Withdraw extends JFrame implements ActionListener {
                 return;
             }
 
+            // Reject if decimal
+            if(withdrawAmountStr.contains(".") || withdrawAmountStr.contains(",")) {
+                JOptionPane.showMessageDialog(this, "Coins or fractional amounts are not acceptable. Enter whole amount only.");
+                amount.setText("");
+                amount.requestFocusInWindow();
+                return;
+            }
+
             // Numeric check
             int withdrawAmount;
             try { withdrawAmount = Integer.parseInt(withdrawAmountStr.replaceFirst("^0+(?!$)", "")); }
@@ -101,18 +109,10 @@ public class Withdraw extends JFrame implements ActionListener {
                 return;
             }
 
-            // Reject if decimal
-            if(withdrawAmountStr.contains(".") || withdrawAmountStr.contains(",")) {
-                JOptionPane.showMessageDialog(this, "Coins or fractional amounts are not acceptable. Enter whole amount only.");
-                amount.setText("");
-                amount.requestFocusInWindow();
-                return;
-            }
-
             // Balance check
             int balance = BalanceEnquiry.getBalance(PIN);
             if (withdrawAmount > balance) {
-                JOptionPane.showMessageDialog(this, "Insufficient balance! Your current balance is Tk " + balance + ".", "Insufficient Funds", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Insufficient balance! Your current balance is Tk " + balance + ".", "Withdrawal Failed", JOptionPane.ERROR_MESSAGE);
                 amount.setText("");
                 amount.requestFocusInWindow();
                 return;
