@@ -20,15 +20,15 @@ public class MiniStatement extends JFrame implements ActionListener {
         // Frame setup
         setTitle("Mini Statement");
         setSize(500, 600);
-        setLocation(20, 20);
+        setLocation(350, 40);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         getContentPane().setBackground(Color.white);
         setLayout(null);
 
         // Header
         JLabel bank = new JLabel("Bangladesh Bank");
-        bank.setFont(new Font("Raleway", Font.BOLD, 15));
-        bank.setBounds(150, 20, 200, 20);
+        bank.setFont(new Font("Raleway", Font.BOLD, 18));
+        bank.setBounds(160, 20, 200, 20);
         add(bank);
 
         // Card number
@@ -38,7 +38,7 @@ public class MiniStatement extends JFrame implements ActionListener {
 
         // Column headers
         JLabel dateHeader = new JLabel("Date and Time");
-        dateHeader.setBounds(40, 95, 200, 20);
+        dateHeader.setBounds(100, 95, 200, 20);
         add(dateHeader);
 
         JLabel typeHeader = new JLabel("Type");
@@ -94,7 +94,8 @@ public class MiniStatement extends JFrame implements ActionListener {
 
         // Balance label
         balanceLabel = new JLabel();
-        balanceLabel.setBounds(80, 460, 400, 20);
+        balanceLabel.setBounds(20, 460, 400, 20);
+        balanceLabel.setFont(new Font("Raleway", Font.ITALIC, 13));
         add(balanceLabel);
 
         // Load transactions
@@ -217,6 +218,6 @@ public class MiniStatement extends JFrame implements ActionListener {
 
     public static void main(String[] args) {
         // run GUI creation on the Event Dispatch Thread
-        SwingUtilities.invokeLater(() -> new MiniStatement(""));
+        SwingUtilities.invokeLater(() -> new MiniStatement("1243"));
     }
 }
