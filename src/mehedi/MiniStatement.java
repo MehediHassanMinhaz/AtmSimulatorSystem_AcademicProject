@@ -138,6 +138,6 @@ public class MiniStatement extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) { this.dispose(); }
 
     public static void main(String[] args) {
-        new MiniStatement("0800");
+        new MiniStatement("");
     }
 }
