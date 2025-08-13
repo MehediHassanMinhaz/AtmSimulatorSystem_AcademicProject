@@ -218,6 +218,6 @@ public class MiniStatement extends JFrame implements ActionListener {
 
     public static void main(String[] args) {
         // run GUI creation on the Event Dispatch Thread
-        SwingUtilities.invokeLater(() -> new MiniStatement("1243"));
+        SwingUtilities.invokeLater(() -> new MiniStatement(""));
     }
 }
