@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class PinChange extends JFrame implements ActionListener {
@@ -20,15 +21,15 @@ public class PinChange extends JFrame implements ActionListener {
         setLayout(null);
 
         JLabel bg = AtmBgImage();
-        addLabel("Enter old PIN: ", 15, 150, 230, 700, 35, bg, Color.WHITE);
-        oldPIN = addPasswordField(bg, 310, 240);
-        addLabel("Enter new PIN: ", 15, 150, 260, 700, 35, bg, Color.WHITE);
-        newPIN = addPasswordField(bg,310, 270);
-        addLabel("Confirm new PIN: ", 15, 150, 290, 700, 35, bg, Color.WHITE);
-        confirmPIN = addPasswordField(bg,310, 300);
+        addLabel("Enter old PIN: ", 17, 150, 232, 700, 35, bg, Color.WHITE);
+        oldPIN = addPasswordField(bg, 320, 240);
+        addLabel("Enter new PIN: ", 17, 150, 262, 700, 35, bg, Color.WHITE);
+        newPIN = addPasswordField(bg,320, 270);
+        addLabel("Confirm new PIN: ", 17, 150, 292, 700, 35, bg, Color.WHITE);
+        confirmPIN = addPasswordField(bg,320, 300);
 
-        change = addButton("CHANGE", 170, 405, bg, Color.CYAN);
-        back = addButton("BACK", 330, 405, bg, Color.RED);
+        change = addButton("CHANGE", 150, 404, bg, Color.CYAN);
+        back = addButton("BACK", 350, 404, bg, Color.RED);
 
         setVisible(true);
     }
@@ -43,7 +44,7 @@ public class PinChange extends JFrame implements ActionListener {
 
     private JButton addButton (String text, int x, int y, JLabel img, Color bgColor) {
         JButton button = new JButton(text);
-        button.setBounds(x, y, 100, 20);
+        button.setBounds(x, y, 100, 18);
         button.setBackground(bgColor);
         img.add(button);
         button.addActionListener(this);
@@ -52,8 +53,8 @@ public class PinChange extends JFrame implements ActionListener {
 
     private JPasswordField addPasswordField (JLabel bg, int x, int y) {
         JPasswordField passwordField = new JPasswordField();
-        passwordField.setFont(new Font("Raleway", Font.BOLD, 14));
-        passwordField.setBounds(x, y, 130, 15);
+        passwordField.setFont(new Font("Raleway", Font.BOLD, 20));
+        passwordField.setBounds(x, y, 130, 20);
         bg.add(passwordField);
         return passwordField;
     }
@@ -97,14 +98,17 @@ public class PinChange extends JFrame implements ActionListener {
                 return;
             }
             // --- Phase 3: Persist to DB ---
-            try {
-                DatabaseConnection databaseConnection = new DatabaseConnection();
-                String query1 = "update bank set pin = '" + newPin + "' where pin = '" + PIN + "'";
-                String query2 = "update signup3 set pinCode = '" + newPin + "' where pinCode = '" + PIN + "'";
-                String query3 = "update login set pinNo = '" + newPin + "' where pinNo = '" + PIN + "'";
-                databaseConnection.statement.executeUpdate(query1);    // 4️⃣ Execute the SQL Query
-                databaseConnection.statement.executeUpdate(query2);    // 4️⃣ Execute the SQL Query
-                databaseConnection.statement.executeUpdate(query3);    // 4️⃣ Execute the SQL Query
+            try (DatabaseConnection db = new DatabaseConnection()) {
+                String[] tables = {"bank", "signup3", "login"};
+                String[] pinCols = {"pin", "pinCode", "pinNo"};
+                for (int i = 0; i < tables.length; i++) {
+                    String sql = "UPDATE " + tables[i] + " SET " + pinCols[i] + " = ? WHERE " + pinCols[i] + " = ?";
+                    try (PreparedStatement ps = db.connection.prepareStatement(sql)) {
+                        ps.setString(1, newPin);
+                        ps.setString(2, PIN);
+                        ps.executeUpdate();
+                    }
+                }
 
                 JOptionPane.showMessageDialog(this, "PIN Changed Successfully", "PIN Updated", JOptionPane.INFORMATION_MESSAGE);
 
@@ -114,6 +118,9 @@ public class PinChange extends JFrame implements ActionListener {
             } catch (SQLException e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "DB error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Unexpected error: " + ex.getMessage());
             }
         } else {
             this.dispose();

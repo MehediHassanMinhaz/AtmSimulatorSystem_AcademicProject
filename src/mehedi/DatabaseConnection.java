@@ -2,7 +2,7 @@ package mehedi;
 
 import java.sql.*;
 
-public class DatabaseConnection {
+public class DatabaseConnection implements AutoCloseable {
     Connection connection;
     Statement statement;
 
@@ -25,23 +25,9 @@ public class DatabaseConnection {
         }
     }
 
-    // // 5️⃣ Close All Connections (Important!)
-    // public void close() {
-    //     try {
-    //         if (statement != null) statement.close();
-    //         if (connection != null) connection.close();
-    //     } catch (SQLException e) {
-    //         e.printStackTrace();
-    //     }
-    // }
+    @Override
+    public void close() throws Exception {
+        if (statement != null) try { statement.close(); } catch (Exception ignore) {}
+        if (connection != null) try { connection.close(); } catch (Exception ignore) {}
+    }
 }
-
-/*  JDBC 5-step process:
-========================
-
-
-    // 5️⃣ Close All Connections (Important!)
-    rs.close();
-    stmt.close();
-    con.close();
- */
