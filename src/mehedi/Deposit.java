@@ -142,6 +142,6 @@ public class Deposit extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        new Deposit("1234");
+        new Deposit("");
     }
 }

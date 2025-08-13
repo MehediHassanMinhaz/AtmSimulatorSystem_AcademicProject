@@ -150,6 +150,6 @@ public class Withdraw extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        new Withdraw("1234");
+        new Withdraw("");
     }
 }

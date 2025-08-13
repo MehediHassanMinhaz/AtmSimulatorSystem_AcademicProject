@@ -110,6 +110,6 @@ public class BalanceEnquiry extends JFrame implements ActionListener {
 
     // small main for quick manual test (optional)
     public static void main(String[] args) {
-        new BalanceEnquiry("1234");
+        new BalanceEnquiry("");
     }
 }
