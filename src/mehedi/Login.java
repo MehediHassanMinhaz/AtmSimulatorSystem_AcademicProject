@@ -24,8 +24,7 @@ public class Login extends JFrame implements ActionListener {
         cardTextField = addTextField(300, 150);
         addLabel("PIN:", 28, 120, 220, 250, 30);
         pinTextField = addPasswordField(300, 220);
-
-
+        
         loginButton = addButton("SIGN IN", 300, 300, 100, 30, Color.GREEN, Color.WHITE);
         clearButton = addButton("CLEAR", 430, 300, 100, 30, Color.RED, Color.WHITE);
         signupButton = addButton("SIGN UP", 300, 350, 230, 30, Color.BLUE, Color.WHITE);
